@@ -1,4 +1,4 @@
-# JavaScript高级程序设计（第5版）
+# 速读《JavaScript高级程序设计（第5版）》
 
 <img src="./assets/image-20260320004855637.png" alt="image-20260320004855637" style="zoom:50%;" />
 
