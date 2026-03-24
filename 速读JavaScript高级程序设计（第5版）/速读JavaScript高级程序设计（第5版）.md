@@ -316,7 +316,7 @@ console.log(true.toString()); //true
 
 ## 第6章 高级引用类型
 
-### Array
+### Array常用方法
 
 ```js
 
@@ -394,5 +394,83 @@ colors = ['red', 'green', 'blue', 'yellow', 'pink'];
 removed = colors.splice(1, 2, 'black', 'gray');
 console.log(removed); //[ 'green', 'blue' ]
 console.log(colors); //[ 'red', 'black', 'gray', 'yellow', 'pink' ]
+
+//8、查找
+//简单查找
+let letters = ["a", "b", "c", "d", "b", "f"];
+console.log(letters.includes("b")); //true
+console.log(letters.indexOf("b")); //1
+console.log(letters.lastIndexOf("b")); //4
+//使用断言函数查找
+const people = [
+  {
+    name: "克莱恩",
+    age: 20,
+  },
+  {
+    name: "奥黛丽",
+    age: 18,
+  },
+  {
+    name: "邓恩",
+    age: 45,
+  },
+];
+//返回的第一个匹配的元素，同理findIndex方法返回第一个匹配的元素索引
+let youngPeople = people.find((element, index, array) => element.age < 25);
+console.log(youngPeople); //{ name: '克莱恩', age: 20 }
+
+//9、迭代方法
+let numbers = [1, 2, 3, 4, 5];
+//遍历数组，每一项函数都返回true，结果才是true
+let everyResult = numbers.every((item, index, array) => item > 2);
+console.log(everyResult); //false
+//遍历数组，有一项函数返回true，结果就是true
+let someResult = numbers.some((item, index, array) => item > 2);
+console.log(someResult); //true
+//遍历数组，函数返回true的项会组成数组后返回
+let filterResult = numbers.filter((item, index, array) => item > 2);
+console.log(filterResult); //[ 3, 4, 5]
+//遍历数组，每次函数调用结果组成数组后返回
+let mapResult = numbers.map((item, index, array) => item * 2);
+console.log(mapResult); //[ 2, 4, 6, 8, 10]
+//遍历数组，代替for
+numbers.forEach((item, index, array) => {
+    if(item > 2) {
+        console.log(item);
+    }
+});
+// 3
+// 4
+// 5
+
+//10、归并方法（聚合）
+let sum = numbers.reduce((pre, cur, index, array) => pre + cur, 0);
+console.log(sum); //15
+
+//11、展开方法（拍平）
+const arr3 = [1, [2, [3, 4]]];
+//第一层： 1, [2, [3, 4]]
+//第二层：     2, [3, 4]
+//第三层：         3, 4
+const flatArr = arr3.flat();//等同于flat(1) 拍一层
+//遍历数组，遇到第一层的包裹都拆掉，如[2, [3, 4]]拆成2, [ 3, 4 ]，里面还有一个包裹[3, 4] 不拆
+console.log(flatArr); // 1, 2, [ 3, 4 ] ]
+//拆完一层后，拆第二层包裹[3, 4] 
+console.log(arr3.flat(2)); //[ 1, 2, 3, 4 ]
+//Infinity无限大，也就是拆到底
+console.log(arr3.flat(Infinity)) //[ 1, 2, 3, 4 ]
+const data = [
+  { id: 1, items: ['a', 'b'] },
+  { id: 2, items: ['c', 'd'] }
+];
+//先转换数据
+const itemsArr = data.map(obj => obj.items);
+console.log(itemsArr); //[ [ 'a', 'b' ], [ 'c', 'd' ] ]
+//再拍平
+console.log(itemsArr.flat()) //[ 'a', 'b', 'c', 'd' ]
+//以上两步相当于flatMap
+console.log(data.flatMap(obj => obj.items)); //[ 'a', 'b', 'c', 'd' ]
+
 ```
 
