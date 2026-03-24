@@ -310,8 +310,89 @@ console.log(true.toString()); //true
 顾名思义，js开始执行时就存在的，只有一个实例的对象，如下：
 
 - Math 数学工具集，提供计算相关方法（min/max，round，random等）， 无构造器能力。
+
 - JSON 处理JSON序列化/反序列化（parse，stringify），全局唯一的JSON工具对象。
 - globalThis ES规范中统一的全局对象（浏览器中等于window，Nodejs中等于global），承载所有全局变量和全局方法，如encodeURIComponent，eval等。
 
 ## 第6章 高级引用类型
+
+### Array
+
+```js
+
+//1、扩展操作符
+//可以将数组元素逐个展开，从而更容易的完成数组复制，合并。
+const arr1 = [1, 2, 3];
+const arr2 = [...arr1, 4, 5, 6];
+console.log(arr2); //[ 1, 2, 3, 4, 5, 6 ]
+//还可以用于对象展开
+const user = {name: '张三', age: 18};
+const newUser = {...user, city: '武汉'};
+console.log(newUser); //{ name: '张三', age: 18, city: '武汉' }
+
+//2、剩余操作符
+//用于将数组的剩余元素收集到一个新数组中，通常用于函数参数
+function sum(...numbers) {
+  //reduce((累加结果, 当前项) => 累加结果 + 当前项, 初始值)
+  return numbers.reduce((total, num) => total + num, 0);
+}
+console.log(sum(1, 2, 3, 4, 5)); //15
+//或解构赋值
+const [first, second, ...rest] = [1, 2, 3, 4, 5];
+console.log(rest); //[ 3, 4, 5 ]
+
+//3、栈方法，提供后进先出（LIFO）的方法，即插入和删除都在栈顶。
+let stack = [1, 2];
+//push推入栈顶
+let count = stack.push(3, 4); 
+console.log(`stack length: ${count}`); //stack length: 4
+//pop从栈顶取出
+console.log(stack.pop()); //4
+
+//4、队列方法，提供先进先出（FIFO）的方法，即在队尾插入，在队首删除。
+let queue = [1, 2];
+//push加入队尾
+count = queue.push(3, 4); 
+console.log(`queue length: ${count}`); //queue length: 4
+//shift从队首取出
+console.log(stack.shift()); //1
+
+//5、排序
+let values = [0, 10, 5, 1, 15];
+//默认情况下，先调用String()转换函数，再按照字符串升序排序
+values.sort(); 
+console.log(values); //[ 0, 1, 10, 15, 5 ]
+//想要按照数值排序，可以使用比较函数做参数。
+//如果第一个参数应该排在第二个参数前面，则返回-1，反之为1，相等为0
+values.sort((a, b) => { 
+  if (a < b) { //升序
+    return -1; 
+  } else if (a > b) {
+    return 1;
+  } else {
+    return 0;
+  }
+});
+console.log(values); //[ 0, 1, 5, 10, 15 ]
+//简化：
+values.sort((a, b) => b - a) //倒序
+console.log(values);  //[ 15, 10, 5, 1, 0 ]
+
+//6、截取，不修改原数据
+let colors = ['red', 'green', 'blue', 'yellow', 'pink'];
+let colors2 = colors.slice(1, 4);
+console.log(colors2); //[ 'green', 'blue', 'yellow' ]
+
+//7、万能增删改
+//从第0个位置，删除1个元素。
+colors = ['red', 'green', 'blue', 'yellow', 'pink'];
+let removed = colors.splice(0, 1); 
+console.log(removed); //[ 'red' ]
+console.log(colors); //[ 'green', 'blue', 'yellow', 'pink' ]
+//从第1个位置，删除2个元素，然后在该位置在插入2元素
+colors = ['red', 'green', 'blue', 'yellow', 'pink'];
+removed = colors.splice(1, 2, 'black', 'gray');
+console.log(removed); //[ 'green', 'blue' ]
+console.log(colors); //[ 'red', 'black', 'gray', 'yellow', 'pink' ]
+```
 
