@@ -311,10 +311,7 @@ console.log(true.toString()); //true
 
 - Math 数学工具集，提供计算相关方法（min/max，round，random等）， 无构造器能力。
 - JSON 处理JSON序列化/反序列化（parse，stringify），全局唯一的JSON工具对象。
+- globalThis ES规范中统一的全局对象（浏览器中等于window，Nodejs中等于global），承载所有全局变量和全局方法，如encodeURIComponent，eval等。
 
-- globalThis ES规范中统一的全局对象（浏览器中等于window，Nodejs中等于global），承载所有全局变量和全局方法。  
-
-  
-
-
+## 第6章 高级引用类型
 
