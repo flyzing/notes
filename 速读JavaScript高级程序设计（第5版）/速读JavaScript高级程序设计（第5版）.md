@@ -316,16 +316,18 @@ console.log(true.toString()); //true
 
 ## 第6章 高级引用类型
 
+只关注常用方法，弱引用，定型数组相关都丢掉，用到再看。
+
 ### Array常用方法
 
 ```js
 
 //1、扩展操作符
-//可以将数组元素逐个展开，从而更容易的完成数组复制，合并。
+//把可迭代元素展开成数组元素，从而更容易的完成数组复制，合并。
 const arr1 = [1, 2, 3];
 const arr2 = [...arr1, 4, 5, 6];
 console.log(arr2); //[ 1, 2, 3, 4, 5, 6 ]
-//还可以用于对象展开
+//还可以用于对象展开键值对
 const user = {name: '张三', age: 18};
 const newUser = {...user, city: '武汉'};
 console.log(newUser); //{ name: '张三', age: 18, city: '武汉' }
@@ -473,4 +475,138 @@ console.log(itemsArr.flat()) //[ 'a', 'b', 'c', 'd' ]
 console.log(data.flatMap(obj => obj.items)); //[ 'a', 'b', 'c', 'd' ]
 
 ```
+
+### Map常用方法
+
+Map和Object一样都是键值对结构，如果key经常变更，必须保证插入顺序，类似缓存作用使用Map，其他情况使用Object。
+
+```js
+//map接受的参数，必须是一个可迭代对象，而且每一项必须是[key, value]格式的数组。
+const m = new Map([
+  ['key1', 'val1'],
+  ['key2', 'val2'],
+  ['key3', 'val3'],
+]);
+console.log(m.has('key1')); //true
+m.set('key1', 'hello')
+console.log(m.get('key1')); //hello
+m.delete('key1');
+console.log(m.size); //2
+```
+
+### Set常用方法
+
+```JS
+const s = new Set(['val1', 'val2', 'val3']);
+console.log(s.has('val1')); //true
+s.add('val1'); //去重了，不会出现'val1', 'val2', 'val3', 'val1'
+console.log(s.size); //3
+//最常用：数组去重
+const arr = [1, 2, 3, 1, 2, 5, 3];
+const uniqueArr = [...new Set(arr)];
+console.log(uniqueArr); //[ 1, 2, 3, 5 ]
+```
+
+## 第7章 迭代器与生成器
+
+### 理解迭代器
+
+核心元素：
+
+- 可迭代对象（Iterable）就是能够被挨个遍历的东西，
+
+- 迭代器（Iterator）就是负责挨个取值的工具。
+
+- 可迭代协议（Iterable Protocol）就是js规定的想要成为可迭代对象，必须满足的规则：（这里只是增强理解，工作中100%用不到）
+
+  规则1：必须有一个Symbol.iterator属性
+
+  规则2：这个属性必须是一个工厂函数，调用它就能返回一个新的迭代器
+
+  规则3：迭代器必须有next()方法，用来取数据
+
+```JS
+
+const arr = [1,2];
+for(const num of arr) { //数组迭代
+  console.log(num); //输出：1 2
+}
+// 规则1：数组自带内置的Symbol属性，规则2：这个属性是工厂函数，调用它返回的是一个迭代器
+let iter = arr[Symbol.iterator]();
+// 规则3：迭代器必须有next方法，返回的结果对象包含value属性和done属性（true表示“耗尽”）
+console.log(iter.next()); //{ value: 1, done: false }
+console.log(iter.next()); //{ value: 2, done: false }
+console.log(iter.next()); //{ value: undefined, done: true }
+console.log(iter.next()); //{ value: undefined, done: true }
+
+```
+
+我们可以满足可迭代协议，实现自定义迭代器
+
+```JS
+const myIterable = {
+  //规则1：必须有一个Symbol.iterator属性
+  [Symbol.iterator]() {
+    let count = 1;
+    return { //规则2：这个属性必须是一个工厂函数，调用它就能返回一个新的迭代器
+      next() { //规则3：迭代器必须有next()方法，用来取数据
+        if(count <= 2) {
+          return {value: count++, done: false};
+        } else {
+          return {value: undefined, done: true};
+        }
+      }
+    }
+  }
+}
+for (const num of myIterable) { //自定义迭代
+  console.log(num); //输出：1 2
+}
+```
+
+### 理解生成器
+
+生成器是自带迭代器的函数，不用手写 next ()，也就是最简单的迭代器。
+
+注意，函数体中还可以加入return语句，如return 3，作用是提前结束迭代，但是问题是for...of....拿不到return返回值，因此不要用。
+
+```js
+//生成器函数（普通函数加个*就是）
+function* gen() {
+  yield 1; //yield暂停
+  yield 2;
+}
+let g = gen();
+console.log(g.next()); //{ value: 1, done: false }
+console.log(g.next()); //{ value: 2, done: false }
+console.log(g.next()); //{ value: undefined, done: true }
+for (let v of gen()) { //生成器迭代
+  console.log(v); //输出：1 2
+}
+
+//生成器初始化 Map（或Set，Array）
+const m2 = new Map({
+  //Symbol.iterator元素是一个工厂方法，返回一个迭代器，刚好生成器就是简化的迭代器。
+  *[Symbol.iterator]() {
+    yield ["key1", "val1"];
+    yield ["key2", "val2"];
+    yield ["key3", "val3"];
+  },
+});
+for(let e of m2) { //map迭代
+  console.log(`key:${e[0]}, value:${e[1]}`);
+}
+// key:key1, value:val1
+// key:key2, value:val2
+// key:key3, value:val3
+
+```
+
+
+
+
+
+
+
+
 
