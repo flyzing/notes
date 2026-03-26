@@ -327,10 +327,6 @@ console.log(true.toString()); //true
 const arr1 = [1, 2, 3];
 const arr2 = [...arr1, 4, 5, 6];
 console.log(arr2); //[ 1, 2, 3, 4, 5, 6 ]
-//还可以用于对象展开键值对
-const user = {name: '张三', age: 18};
-const newUser = {...user, city: '武汉'};
-console.log(newUser); //{ name: '张三', age: 18, city: '武汉' }
 
 //2、剩余操作符
 //用于将数组的剩余元素收集到一个新数组中，通常用于函数参数
@@ -605,12 +601,382 @@ for(let e of m2) { //map迭代
 ```
 
 ## 第8章 对象、类与面向对象编程
-
-这一章非常重要，没法跳过任何内容。
+核心章节，地毯式覆盖
 
 ### 理解对象
 
-数据属性和访问器属性
+**1、对象属性分为两种：数据属性和访问器属性**
+
+（1）数据属性可以通过字面量定义对象时同时定义，也可以通过Object.defineProperties()定义，有4个特性：
+
+- Configurable：可新增，删除，配置特性
+- Enumerable：可在for-in循环中返回
+- Writable：可修改
+- Value：属性值
+
+```js
+let person = { name: "克莱恩" };
+//最常见的定义对象属性的方式，configurable，enumerable，writable默认为true，value为'克莱恩'，即无任何限制。
+
+let person2 = {};
+//使用Object.defineProperties()定义对象属性时，可修改特性，但注意此时configurable，enumerable，writable默认为false
+Object.defineProperties(person2, {
+  name: {
+    writable: false,
+    configurable: true, //需手动设置为true，否则默认为false
+    enumerable: true, //需手动设置为true，否则默认为false
+    value: "克莱恩",
+  },
+  age: {
+    writable: true, //默认不可枚举，不可配置
+    value: 25
+  }
+});
+console.log(person2.name); //克莱恩
+console.log(person2.age); //25
+//可枚举的属性
+for (let p in person2) {
+  console.log(p); //name
+}
+//不可修改的属性
+person2.name = "奥黛丽";
+//TypeError: Cannot assign to read only property 'name' of object '#<Object>'
+```
+
+（2）访问器属性不能直接定义，只能通过Object.defineProperties()定义，有4个特性：
+
+- Configurable：可新增，删除，配置特性
+- Enumerable：可在for-in循环中返回
+- Get：获取函数，读取属性时自动调用，默认undefined
+- Set：设置函数，设置属性时自动调用，默认undefined
+
+```js
+let book = {
+  year_: 2023,
+  edition: 1,
+};
+Object.defineProperties(book, {
+  year: {
+    get() { //获取函数
+      return this.year_;
+    },
+    set(newValue) { //设置函数
+      if (newValue > 2023) {
+        this.year_ = newValue;
+        this.edition = newValue - 2023;
+      }
+    },
+    //Configurable，Enumerable默认为false
+  },
+});
+book.year = 2026;
+console.log(book.edition); //3
+
+//可枚举属性
+for (const key in book) {
+  console.log(key); //year_ edition （没有year）
+}
+```
+
+工作中使用更简洁的语法糖，另外，只有get没有set方法就是只读属性，
+
+```js
+let book2 = {
+  year_: 2023,
+  edition: 1,
+  get year() { //获取函数
+    return this.year_;
+  },
+  set year(newValue) { //设置函数
+    if (newValue > 2023) {
+      this.year_ = newValue;
+      this.edition = newValue - 2023;
+    }
+  },
+};
+book2.year = 2026;
+console.log(book2.edition); //3
+
+//读取属性特性
+console.log(Object.getOwnPropertyDescriptors(book2));
+// {
+//   year_: { value: 2026, writable: true, enumerable: true, configurable: true },
+//   edition: { value: 3, writable: true, enumerable: true, configurable: true },
+//   year: {
+//     get: [Function: get year],
+//     set: [Function: set year],
+//     enumerable: true,
+//     configurable: true
+//   }
+// }
+```
+
+**2、访问对象属性**
+
+ ```js
+ const person = {
+   name: '克莱恩',
+   age: 22,
+   address: {
+     city: '廷根市',
+     street: '水仙花街2号'
+   }
+ }
+ //访问属性，使用点或者括号（属性名需要动态确定或包含特殊字符）
+ console.log(`姓名：${person.name}，年龄：${person['age']}`); //姓名：克莱恩，年龄：22
+ //连缀操作符，用在多层属性
+ console.log(person.address.city); //廷根市
+ //可选择连缀操作符，用在多层属性可能为空
+ console.log(person.brother?.address?.city); //undefined
+ ```
+
+**3、对象的静态方法**
+
+（1）锁死对象的三种方法：preventExtensions，seal，freeze，不让别人乱改，以防数据被篡改引起bug。区别是程度由轻到重。
+
+注意：三个方法仅作用于对象本身**，**不影响嵌套对象（浅锁定），而且不可逆。
+
+```js
+const obj = { name: "克莱恩" };
+//1、禁止扩展，只能改，不能加
+try {
+  Object.preventExtensions(obj);
+  console.log(Object.isExtensible(obj)); //false
+  obj.age = 23;
+} catch (error) {
+  console.log(error); //TypeError: Cannot add property age, object is not extensible
+}
+
+//2、封存对象，只能改，不能加，不能删
+try {
+  Object.seal(obj);
+  delete obj.name;
+} catch (error) {
+  console.log(error); //TypeError: Cannot delete property 'name' of #<Object>
+}
+
+//3、冻结对象，不能改，不能加，不能删，只读
+try {
+  Object.freeze(obj);
+  obj.name = '莫雷蒂';
+} catch (error) {
+  console.log(error); //TypeError: Cannot assign to read only property 'name' of object '#<Object>'
+}
+```
+
+（2）合并对象的两种方法：Object.assign()和...
+
+注意：两种方式都是浅复制
+
+```js
+let person = {};
+let name = {name: '克莱恩', age: 23};
+let address = { address: {
+    city: '廷根市',
+    street: '水仙花街2号'
+  }};
+let result = Object.assign(person, name, address);
+//把原对象合并到目标对象上返回
+console.log(result === person); //true
+//既然第一参数和返回结果是一个对象，就干脆改写下，避免误会，下面的写法更常见：
+let result2 = Object.assign({}, name, address);
+console.log(result2); //{ name: '克莱恩', age: 23, address: { city: '廷根市', street: '水仙花街2号' } }
+
+//工作中更常用的合并方式，创建新对象合并
+let result3 = {...name, ...address};
+console.log(result3); //{ name: '克莱恩', age: 23, address: { city: '廷根市', street: '水仙花街2号' } }
+```
+
+（3）对象判定Object.is() 修复了===两个bug
+
+```JS
+//NaN和NaN不全等
+console.log( parseInt('abc') === parseInt('abc') ); //false
+//数学计算中+0和-0不同，如 1/+0 = Infinity（正无穷）， 1/-0 = -Infinity（负无穷）
+console.log(+0 === -0); //true
+//Object.is()方法修复上面两个全等bug
+console.log(Object.is(NaN, NaN)); //true
+console.log(Object.is(+0, -0)); //false
+```
+
+**4、增强的对象方法（语法糖）**
+
+```js
+//1、属性简写
+let name = "克莱恩";
+let person = {
+  name,
+};
+//等同于
+person = {
+  name: name,
+};
+console.log(person.name); //克莱恩
+
+//2、可计算属性
+const nameKey = "name";
+const ageKey = "age";
+let person2 = {
+  [nameKey]: "奥黛丽",
+  [ageKey]: 20,
+};
+//等同于
+person2 = {};
+person2[nameKey] = "奥黛丽";
+person2[ageKey] = "20";
+console.log(person2); //{ name: '奥黛丽', age: 20 }
+
+//3、简写方法名
+let person3 = {
+  setName(name) {
+    console.log(`我的名字是${name}`);
+  },
+};
+//等同于
+person3 = {
+  setName: function (name) {
+    console.log(`我的名字是${name}`);
+  },
+};
+person3.setName("邓恩"); //我的名字是邓恩
+
+//访问器属性简化
+person3 = {
+  name_: '',
+  get name() {
+    return this.name_;
+  },
+  set name(name) {
+    this.name_ = name;
+  }
+}
+//等同于
+person3 = {name_: ''};
+Object.defineProperties(person3, {
+  name: {
+    get: function() {
+      return this.name_;
+    },
+    set: function(name) {
+      this.name_ = name;
+    }
+  }
+});
+person3.name = '邓恩';
+console.log(`我的名字是${person3.name}`); //我的名字是邓恩
+```
+
+**5、对象解构**
+
+快速从对象里把属性拿出来，赋值给变量。
+
+```js
+let person = { name: "克莱恩", age: 23 };
+//1、普通写法（麻烦）
+let name = person.name;
+let age = person.age;
+
+//2、解构写法
+({ name, age } = person); //如果给事先声明的变量赋值，则赋值表达式必须包括在一对括号中
+console.log(`name: ${name}, age: ${age}`); //name:克莱恩, age: 23
+
+{
+  //3、重命名
+  let { name: userName, age } = person; //name改名为userName
+  console.log(`name: ${userName}, age: ${age}`); //name:克莱恩, age: 23
+}
+{
+  //4、默认值
+  let { name, age, sex = "男" } = person;
+  console.log(`name: ${name}, age: ${age}, sex: ${sex}`); //name:克莱恩, age: 23, sex: 男
+}
+{
+  //5、嵌套解构
+  const person = {
+    name: "克莱恩",
+    age: 22,
+    address: {
+      city: "廷根市",
+      street: "水仙花街2号",
+    },
+  };
+  const {name , age, address: {city, street}} = person;
+  console.log(`name: ${name}, age: ${age}, city: ${city}, street: ${street}`); //name: 克莱恩, age: 22, city: 廷根市, street: 水仙花街2号
+}
+{
+  //6、参数上下文匹配
+  function printPerson(number, {name, age}, salary) {
+    console.log(`No.${number} name: ${name}, age: ${age}, salary: ${salary}`);
+  }
+  printPerson(1, person, '20金榜/月'); //No.1 name: 克莱恩, age: 23, salary: 20金榜/月
+}
+
+```
+
+**6、剩余操作符和扩展操作符**
+
+....既是剩余操作符又是扩展操作符，作用不同区分，它们不仅可以用于数组，也可以用于对象。
+
+```js
+const person = {
+  name: "克莱恩",
+  age: 22,
+  address: {
+    city: "廷根市",
+    street: "水仙花街2号",
+  },
+};
+//1、剩余操作符：出现在等号左边或函数参数里，作用是把零散属性，打包成一个对象或数组
+const { name, ...remainingData } = person;
+console.log(remainingData); //{ age: 22, address: { city: '廷根市', street: '水仙花街2号' } }
+{
+  const { ...remainingData } = person;
+  console.log(remainingData); //{ name: '克莱恩', age: 22, address: { city: '廷根市', street: '水仙花街2号' } }
+  //复制的对象和原对象属性相同，但不是同一个
+  console.log(remainingData === person); //false
+  //浅拷贝，嵌套属性是同一个
+  console.log(remainingData.address === person.address); //true
+}
+
+//2、扩展操作符：出现在等号右边或函数调用时，作用是把一个对象或数组，拆成零散属性
+const family = {
+  brather: {
+    name: "班森",
+    age: 25,
+  },
+  sister: {
+    name: "梅丽莎",
+    age: 16,
+  },
+};
+const person4 = {...person, sex: '男', salary: '20英镑/月', ...family};
+console.log(person4);
+// {
+//   name: '克莱恩',
+//   age: 22,
+//   address: { city: '廷根市', street: '水仙花街2号' },
+//   sex: '男',
+//   salary: '20英镑/月',
+//   brather: { name: '班森', age: 25 },
+//   sister: { name: '梅丽莎', age: 16 }
+// }
+```
+
+### 创建对象
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
