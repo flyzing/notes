@@ -964,6 +964,71 @@ console.log(person4);
 
 ### 创建对象
 
+**1、构造函数模式**
+
+```js
+//构造函数模式
+function Person(name, age) {
+  this.name = name;
+  this.age = age;
+  this.sayName = function() {
+    console.log(this.name);
+  }
+}
+
+let person1 = new Person('克莱恩', 23);
+let person2 = new Person('奥黛丽', 20);
+person1.sayName(); //克莱恩
+person2.sayName(); //奥黛丽
+```
+
+使用new操作符，调用构造函数会执行以下操作：
+
+（1）在内存中创建一个对象
+
+（2）这个新对象的`__proto__`属性被赋值为构造函数的prototype属性
+
+（3）构造函数内部的this指向新对象
+
+（4）执行构造函数内部的代码
+
+（5）如果构造函数返回非空对象，则返回该对象；否则，返回刚创建的新对象
+
+要理解这段话，必须得先理解：
+
+- 函数的prototype属性，用来存放所有实例共用的东西（方法、属性）
+
+```js
+
+
+//1、函数的prototype属性
+//这是一个普通函数
+function hello() {} 
+//而函数本质是一个全局属性，因此上面等同于
+globalThis.hello = function() {};
+//函数只要声明，就会初始化prototype属性为一个空对象
+console.log(hello.prototype); //{}
+//这个prototype属性对于普通函数来说没用，但是对于构造函数，它会被当做一个公共仓库，所有构造出的实例对象共享它的属性和方法。
+
+//2、对象的__proto__属性
+//每个对象都有__proto__属性，它是一个指针，指向它的构造函数的prototype属性，方便这个对象使用构造函数原型的方法。
+//这是一个普通对象
+let obj = {}
+console.log(obj.__proto__); //[Object: null prototype] {}
+
+
+
+
+```
+
+
+
+
+
+
+
+对象的`__propo__`属性，函数的prototype属性，函数内部的this属性。
+
 
 
 
