@@ -980,6 +980,8 @@ let person1 = new Person('克莱恩', 23);
 let person2 = new Person('奥黛丽', 20);
 person1.sayName(); //克莱恩
 person2.sayName(); //奥黛丽
+//同样的方法，重复创建，浪费空间
+console.log(person1.sayName === person2.sayName); //false
 ```
 
 使用new操作符，调用构造函数会执行以下操作：
@@ -994,40 +996,78 @@ person2.sayName(); //奥黛丽
 
 （5）如果构造函数返回非空对象，则返回该对象；否则，返回刚创建的新对象
 
-要理解这段话，必须得先理解：
-
-- 函数的prototype属性，用来存放所有实例共用的东西（方法、属性）
+要理解这段话，必须得先理解以下3个概念：
 
 ```js
-
-
 //1、函数的prototype属性
-//这是一个普通函数
 function hello() {} 
-//而函数本质是一个全局属性，因此上面等同于
-globalThis.hello = function() {};
-//函数只要声明，就会初始化prototype属性为一个空对象
+//每个函数（含普通函数、构造函数）天生自带 prototype 属性，声明即存在，默认是一个空原型对象
 console.log(hello.prototype); //{}
-//这个prototype属性对于普通函数来说没用，但是对于构造函数，它会被当做一个公共仓库，所有构造出的实例对象共享它的属性和方法。
+//函数自带的 prototype 属性，普通函数直接调用时用不上；
+//当函数被 new 当作构造函数调用时，它就成为实例的公共原型仓库，所有 new 出来的实例共享这里的属性和方法。
 
 //2、对象的__proto__属性
-//每个对象都有__proto__属性，它是一个指针，指向它的构造函数的prototype属性，方便这个对象使用构造函数原型的方法。
-//这是一个普通对象
-let obj = {}
-console.log(obj.__proto__); //[Object: null prototype] {}
+let obj = {}; //等价于 let obj = new Object();
+//每个对象都有__proto__属性，它是一个指针，指向它的构造函数的prototype属性，那么就可以用这个公共仓库里的属性和方法。
+console.log(obj.__proto__ === Object.prototype); //true
 
-
-
-
+//3、this是函数调用时的上下文参数，动态绑定
+function sayThis() {
+  console.log(this);
+  console.log(this.name);
+}
+let obj2 = { sayThis, name: '克莱恩' }; //sayThis函数中的this指向obj2
+obj2.sayThis();
+// { sayThis: [Function: sayThis], name: '克莱恩' } 就是obj2
+// 克莱恩
 ```
 
+构造函数模式的缺陷：实例方法定义在构造函数内部，每次 `new` 都会创建独立函数副本，内存冗余、无法复用。如果把公用方法挂载到 构造函数的 `prototype` 原型对象上，所有实例就可以共享同一个方法。这就是原型模式。
+
+**2、原型模式**
+
+```js
+//原型模式
+function Person(name, age) {
+  //【自身属性】每个实例独立拥有
+  this.name = name;
+  this.age = age;
+}
+//【共享方法】挂载构造函数的原型上
+Person.prototype.sayName = function() {
+   console.log(this.name);
+}
+
+let person1 = new Person('克莱恩', 23);
+let person2 = new Person('奥黛丽', 20);
+person1.sayName(); //克莱恩
+person2.sayName(); //奥黛丽
+//核心：原型上的方法是所有实例共享的，不是独立副本
+console.log(person1.sayName === person2.sayName); //true
+```
+
+（1）理解原型
+
+```js
+let Person = function() {} //等价于function Person() {}
+//每次创建一个函数，就会创建一个prototype属性，默认是空，这就是原型对象
+console.log(Person.prototype); //{}
+//原型对象默认创建一个constructor属性，指回构造函数本身，
+//上一句输出为空是因为constructor属性为不可枚举属性
+console.log(Person.prototype.constructor); //[Function: Person]
+
+let person = new Person();
+//每个对象默认有一个隐形原型指针__proto__指向构造函数的原型对象
+console.log(person.__proto__ === Person.prototype); //true
+//实例自身没有 constructor，是沿原型链 __proto__ 向上查找，借用原型上的 
+console.log(person.hasOwnProperty('constructor')); //false
+console.log(Person.prototype.hasOwnProperty('constructor')); //true
+console.log(person.constructor === Person.prototype.constructor); //true
+```
+
+![image-20260327184644216](./assets/image-20260327184644216.png)
 
 
-
-
-
-
-对象的`__propo__`属性，函数的prototype属性，函数内部的this属性。
 
 
 
