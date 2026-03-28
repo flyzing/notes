@@ -1024,10 +1024,10 @@ obj2.sayThis();
 
 构造函数模式的缺陷：实例方法定义在构造函数内部，每次 `new` 都会创建独立函数副本，内存冗余、无法复用。如果把公用方法挂载到 构造函数的 `prototype` 原型对象上，所有实例就可以共享同一个方法。这就是原型模式。
 
-**2、原型模式**
+**2、构造函数模式 + 原型模式**
 
 ```js
-//原型模式
+//构造函数
 function Person(name, age) {
   //【自身属性】每个实例独立拥有
   this.name = name;
@@ -1048,26 +1048,147 @@ console.log(person1.sayName === person2.sayName); //true
 
 （1）理解原型
 
-```js
-let Person = function() {} //等价于function Person() {}
-//每次创建一个函数，就会创建一个prototype属性，默认是空，这就是原型对象
-console.log(Person.prototype); //{}
-//原型对象默认创建一个constructor属性，指回构造函数本身，
-//上一句输出为空是因为constructor属性为不可枚举属性
-console.log(Person.prototype.constructor); //[Function: Person]
+ <img src="./assets/image-20260327205612365.png" alt="image-20260327205612365" style="zoom:50%;" />
 
-let person = new Person();
-//每个对象默认有一个隐形原型指针__proto__指向构造函数的原型对象
-console.log(person.__proto__ === Person.prototype); //true
-//实例自身没有 constructor，是沿原型链 __proto__ 向上查找，借用原型上的 
-console.log(person.hasOwnProperty('constructor')); //false
-console.log(Person.prototype.hasOwnProperty('constructor')); //true
-console.log(person.constructor === Person.prototype.constructor); //true
+- 每次创建构造函数都会创建一个原型对象prototype，用于让所有实例共享属性和方法，节省内存。
+- 原型对象自带有constructor属性，指回函数本身，可以用于判断类型。
+- 每个实例对象内部都有一个隐形原型属性`__proto__`指向构造函数的原型对象，用于让对象可以根据原型链查找上层方法和属性。
+
+```js
+function Person() {}
+//在原型上添加属性和方法，以供所有实例对象共享
+Person.prototype.name = '克莱恩';
+Person.prototype.age = 23;
+let person1 = new Person();
+let person2 = new Person();
+//对象不同，但是name属性都是属于原型中的同一个属性
+console.log(person1.name === person2.name);
+//检查原型
+console.log(Person.prototype.isPrototypeOf(person1)); //true
+//__proto__是私有变量，需要通过getPrototypeOf方法获取原型
+console.log(Object.getPrototypeOf(person2)); //{ name: '克莱恩', age: 23 }
+//通过setPrototypeOf方法可以修改对象原型
+let newPrototype = { 
+    name: '奥黛丽',
+    age: 20
+};
+Object.setPrototypeOf(person1, newPrototype);
+console.log(person1.name); //奥黛丽
+console.log(person2.name); //克莱恩
 ```
 
-![image-20260327184644216](./assets/image-20260327184644216.png)
+（2）原形层级
 
+<img src="./assets/image-20260328190115593.png" alt="image-20260328190115593" style="zoom:50%;" />
 
+```js
+function Person() {}
+Person.prototype.name = '克莱恩';
+let person1 = new Person();
+person1.name = '奥黛丽'
+//优先找当前对象中的name属性
+console.log(person1.name); //奥黛丽
+console.log(person1.hasOwnProperty('name')); //true
+//删除当前对象的name属性
+delete person1.name;
+//当前对象没有，接着查找原型对象的name属性
+console.log(person1.name); //克莱恩
+console.log(person1.hasOwnProperty('name')); //false
+```
+
+（3）原型和in操作符
+
+```js
+function Person() {}
+Person.prototype.name = '克莱恩';
+let person1 = new Person();
+person1.age = 23;
+//只要对象可以访问，in操作符就返回true
+console.log('name' in person1); //true
+//hasOwnProperty可以判断是否为当前实例对象的属性
+console.log(person1.hasOwnProperty('name')); //false
+//同理我们可以写一个判断是否为原型对象属性的方法
+function hasPrototypeProperty(object, name) {
+    //不是当前实例的属性，并且对象可以访问到的属性就是原型对象的属性
+    return !object.hasOwnProperty(name) && (name in object);
+}
+console.log(hasPrototypeProperty(person1, 'name')); //true
+//for...in...遍历对象自身+原型链上所有可枚举属性，注意遍历数组应该使用for...of...
+for(let prop in person1) {
+    console.log(prop); //age name
+}
+//为了避免for...in...遍历范围不可控，可以使用Object.keys或Object.getOwnPropertyNames代替
+//Object.keys获取当前对象实例的可枚举属性
+console.log(Object.keys(person1)); //[ 'age' ]
+console.log(Object.keys(Person.prototype)); //[ 'name' ]
+//Object.getOwnPropertyNames获取当前对象实例的所有属性（包括不可枚举属性）
+console.log(Object.getOwnPropertyNames(person1)); //[ 'age' ]
+//可以遍历出不可枚举属性constructor
+console.log(Object.getOwnPropertyNames(Person.prototype)); //[ 'constructor', 'name' ]
+```
+
+（4）对象迭代
+
+```js
+//Object.values()和Object.entries()方法用于将对象转换为序列化且可迭代的格式，不包括符号属性。
+let person = {name: '克莱恩', age: 23};
+//Object.values()返回对象值数组
+console.log(Object.values(person)); //[ '克莱恩', 23 ]
+//Object.entries()返回键值对数组，
+let personEntries = Object.entries(person);
+console.log(personEntries); //[ [ 'name', '克莱恩' ], [ 'age', 23 ] ]
+//工作中Object.entries() + for...of...适合遍历键值对
+for(const [key, value] of Object.entries(person)) {
+    console.log(key, value);
+}
+// name 克莱恩
+// age 23
+//Object.fromEntries()可以基于键值对数组构建对象，和Object.entries()作用相反
+let person2 = Object.fromEntries(personEntries);
+console.log(person2); //{ name: '克莱恩', age: 23 }
+//工作中Object.fromEntries()适合将Map转为对象
+const personMap = new Map();
+personMap.set('name', '克莱恩');
+personMap.set('age', 23);
+let person3 = Object.fromEntries(personMap);
+console.log(person3); //{ name: '克莱恩', age: 23 }
+```
+
+（5）原型的动态性
+
+```js
+function Person() {}
+//先创建实例
+let person1 = new Person();
+//后在原型上定义方法
+Person.prototype.sayHi = function() {
+    console.log('hi');
+}
+//依然可以调用sayHi
+//这是因为实例对象查找方法依靠本身的隐性原型指针__proto__动态查找真正引用的原型对象
+//实例对象中并没有原型对象的副本。
+person1.sayHi(); //hi
+//但是如果将Person的原型对象整个替换
+Person.prototype = {
+    constructor: Person,
+  	//新方法
+    sayNo: function() {
+        console.log('no');
+    }
+}
+try {
+    //调用新方法则报错，这是因为person1内的原型指针还是指向的之前的原型对象
+    person1.sayNo(); //TypeError: person.sayNo is not a functio
+} catch(error) {
+    console.log(error);
+}
+//创建一个新对象
+let person2 = new Person();
+//可以调用新方法，这是因为新的对象内的原型指针指向了新的原型对象
+person2.sayNo(); //no
+```
+
+**3、原型继承**
 
 
 
