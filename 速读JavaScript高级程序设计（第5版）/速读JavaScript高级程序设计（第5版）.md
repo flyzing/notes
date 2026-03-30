@@ -1190,6 +1190,121 @@ person2.sayNo(); //no
 
 **3、原型继承**
 
+<img src="./assets/image-20260329171259093.png" alt="image-20260329171259093" style="zoom:50%;" />
+
+```js
+//猿
+function Ape() {
+    this.height = 130;
+}
+Ape.prototype.getHeight = function() {
+    return this.height;
+}
+//人
+function Person(name){
+    this.name = name;
+}
+//1、通过改变原型对象的方式继承父类属性和方法
+Person.prototype = new Ape();
+//覆盖constructor，防止Person.prototype.constructor指向Ape
+Person.prototype.constructor = Person;
+//2、子类再实现自己的新方法
+Person.prototype.getName = function() {
+    return this.name;
+}
+let person1 = new Person('克莱恩');
+//3、实例对象先查找自身属性，如果没有则通过隐性原型指针__proto__在原型链上查找属性和方法
+console.log(person1.getHeight()); //130
+console.log(person1.getName()); //克莱恩
+//4、想要通过实例对象修改原型的属性
+person1.height = 175;
+console.log(person1.height); //175
+let person2 = new Person('奥黛丽');
+//5、发现修改不起作用，实际上只有获取属性时才需要沿着原型链往上找，
+// 在设置属性时如果当前实例没有，就在当前实例设置，不影响原型对象。
+console.log(person2.height); //130
+//6、修改原型属性的正确方式
+Person.prototype.height = 175;
+console.log(person1.height); //175
+console.log(person2.height);  //175
+//7、原型和继承关系
+//如果一个实例的原型链中出现过相应的构造函数，则instanceof和构造函数.prototype.isPrototypeOf()都会返回true
+console.log(person1 instanceof Object); //true
+console.log(person1 instanceof Ape); //true
+console.log(person1 instanceof Person); //true
+console.log(Object.prototype.isPrototypeOf(person1)); //true
+console.log(Ape.prototype.isPrototypeOf(person1)); //true
+console.log(Person.prototype.isPrototypeOf(person1)); //true
+```
+
+通过上面的代码，可以看出原型继承存在两个缺陷：
+
+- 如果在原型对象中存放属性，则这些属性就会变成共享属性，一旦修改，所有的实例对象属性都会改变。这个问题通过只在原型对象中存放方法，属性存放在实例中解决。
+- 原型对象构造函数无法传参，如：Ape构造函数无法传参height（这里只能固定写死，如130），子类实例只能继承这个固定值，无法个性化设置。
+
+两大问题的解决方案（组合继承）
+
+```js
+//父类（猿），属性在构造函数（实例），方法在原型
+function Ape(height) {
+    this.height = height;
+}
+Ape.prototype.getHeight = function() {
+    return this.height;
+}
+//子类（人），借用父类构造函数传参 + 原型继承方法
+function Person(name, height){
+    //核心：借用父类构造函数，给每个实例独立传参
+    Ape.call(this, height);  //height属性在Person构造函数调用时，动态加载到创建出来的对象上
+    this.name = name;
+}
+
+//正确绑定原型链，不共用父实例
+//注意这里不是Person.prototype = new Ape();，创造出来的原型对象类没有height属性
+Person.prototype = Object.create(Ape.prototype);
+Person.prototype.constructor = Person;
+Person.prototype.getName = function() {
+  return this.name;
+};
+
+// 验证：实例独立，可个性化设置
+const p1 = new Person('克莱恩', 175);
+const p2 = new Person('奥黛丽', 165);
+console.log(p1.getName(), p1.getHeight()); // 克莱恩 175
+console.log(p2.getName(), p2.getHeight()); // 奥黛丽 165
+```
+
+### 类
+
+**1、类定义**
+
+```js
+//1、定义类的方法有两种：
+//类声明
+class Animal {}
+//类表达式
+const Zoo = class {};
+
+//2、函数声明提升 与 类声明提升
+console.log(PersonFn); //undefined 
+//var变量声明（函数表达式）只提升变量名，不提升赋值，因此不报错，只返回未定义
+var PersonFn  = function() {};
+
+console.log(ApeFn); //[Function: ApeFn] 
+//函数声明会整体提升，因此可以声明前使用。
+function ApeFn() {}
+
+console.log(Person); //undefined
+//var变量声明，依然只提升变量名
+var Person = class {}
+
+console.log(Ape); //ReferenceError: Cannot access 'Ape' before initialization
+//但是类声明整体都不能提升，因此声明前使用报错
+class Ape {}
+```
+
+
+
 
 
 
