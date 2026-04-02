@@ -1303,7 +1303,93 @@ console.log(Ape); //ReferenceError: Cannot access 'Ape' before initialization
 class Ape {}
 ```
 
+**2、类的构成**
 
+类可以包含构造函数方法，实例方法，获取函数，设置函数和静态类方法。
+
+```js
+class Person {
+  //构造函数方法
+  constructor() {
+    this.name_ = '';
+  }
+
+  //实例方法
+  sayHi() {
+    console.log("你好");
+  }
+
+  //获取函数
+  get name() {
+    return this.name_;
+  }
+
+  //设置函数
+  set name(name) {
+    this.name_ = name;
+  }
+
+  //静态函数
+  static sayNo() {
+    console.log("不");
+  }
+}
+
+let person = new Person();
+person.name = '克莱恩';
+console.log(person.name); //克莱恩
+person.sayHi(); //你好
+Person.sayNo(); //不
+```
+
+类名称表达式是可选的，把类表达式赋值给变量后，可以通过name属性获取类表达式的名称，但不能在类表达式作用于外部访问这个标识符。
+
+```JS
+//类声明（建议使用这种）
+class Person1 {}
+//匿名类表达式
+let Person2 = class {};
+//命名类表达式，Person3外部使用，PersonName内部使用
+let Person3 = class PersonName {
+  sayHi() {
+    //类声明的name属性，直接指向类名（Person1），输出"Person1"
+    console.log(Person1.name); //Person1
+    //匿名类无内部标识符，其name属性默认指向接收它的变量名（Person2），因此输出"Person2"
+    console.log(Person2.name); //Person2
+    //Person3是变量标识符，指向命名类表达式，其name属性会指向类的内部标识符（PersonName），因此Person3.name输出"PersonName"。
+    console.log(Person3.name, PersonName.name); //PersonName PersonName
+  }
+};
+let person = new Person3();
+person.sayHi(); 
+//外部不能使用PersonName
+let p = new PersonName(); //ReferenceError: PersonName is not defined
+```
+
+**3、类构造函数**
+
+```js
+class Person {
+    constructor(name) {
+        this.name_ = name; 
+    }
+    sayName() {
+        console.log(this.name_);
+    }
+}
+//使用new调用类的构造函数会执行如下操作：
+//（1）在内存中创建一个对象
+//（2）在这个对象内部的隐形原型指针__proto__被赋值为构造函数的prototype属性
+//（3）构造函数内部this被赋值为新对象
+//（4）执行构造器内部代码
+//（5）如果构造函数返回为空对象，则返回此对象；否则，返回刚创建的新对象。
+let person = new Person('克莱恩'); 
+person.sayName(); //克莱恩
+
+
+
+
+```
 
 
 
