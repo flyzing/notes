@@ -1303,6 +1303,10 @@ console.log(Ape); //ReferenceError: Cannot access 'Ape' before initialization
 class Ape {}
 ```
 
+**2、类的构成**
+
+
+
 
 
 
