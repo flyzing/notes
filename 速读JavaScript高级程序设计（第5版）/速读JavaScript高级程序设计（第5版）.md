@@ -1370,26 +1370,57 @@ let p = new PersonName(); //ReferenceError: PersonName is not defined
 
 ```js
 class Person {
-    constructor(name) {
-        this.name_ = name; 
-    }
-    sayName() {
-        console.log(this.name_);
-    }
+  constructor(name) {
+    this.name_ = name;
+  }
+  sayName() {
+    console.log(this.name_);
+  }
 }
-//使用new调用类的构造函数会执行如下操作：
+//1、只能使用new调用类的构造函数，执行过程：
 //（1）在内存中创建一个对象
 //（2）在这个对象内部的隐形原型指针__proto__被赋值为构造函数的prototype属性
 //（3）构造函数内部this被赋值为新对象
 //（4）执行构造器内部代码
 //（5）如果构造函数返回为空对象，则返回此对象；否则，返回刚创建的新对象。
-let person = new Person('克莱恩'); 
+let person = new Person("克莱恩");
 person.sayName(); //克莱恩
 
+//2、类就是一个特殊的构造函数
+function Ape() {}
+console.log(typeof Ape); //function
+//Person和Ape一样都是函数
+console.log(typeof Person); //function
+//一样有原型对象，原型对象里面一样有一个constructor属性指向构造函数（这里是类）本身
+console.log(Person === Person.prototype.constructor); //true
 
+//3、既然类是一种特殊的构造函数，也就可以作为参数一样传递
+let classList = [
+  class {
+    constructor(id) {
+      this.id_ = id;
+      console.log(`instance ${this.id_}`);
+    }
+  },
+];
+function createInstance(classDefinition, id) {
+  return new classDefinition(id);
+}
+let person2 = createInstance(classList[0], 9527); //instance 9527
 
-
+//4、和立即调用函数表达式类似，类也可以立即实例化
+let ape = new (class Ape {
+  constructor(name) {
+    this.name_ = name;
+  }
+  sayName() {
+    console.log(this.name_);
+  }
+})("卷毛狒狒");
+ape.sayName(); //卷毛狒狒
 ```
+
+**4、实例、原型和类成员** 
 
 
 
